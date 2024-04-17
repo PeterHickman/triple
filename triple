@@ -1,0 +1,136 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'set'
+
+class Triplets
+  def initialize
+    @data = {}
+    @rows = Set.new
+    @columns = Set.new
+  end
+
+  def add(row, column, value)
+    unless @rows.include?(row)
+      @rows << row
+      @data[row] = {}
+    end
+
+    @columns << column unless @columns.include?(column)
+
+    @data[row][column] = value
+  end
+
+  def rows
+    @rows.to_a.sort
+  end
+
+  def columns
+    @columns.to_a.sort
+  end
+
+  def [](r, c)
+    return nil unless @rows.include?(r) && @columns.include?(c)
+
+    @data[r][c]
+  end
+end
+
+def options
+  args = ARGV.dup
+
+  ##
+  # Default values
+  ##
+  o = { row: 1, column: 2, value: 3, md: false }
+  f = []
+
+  while args.any?
+    x = args.shift
+    case x
+    when '-r'
+      o[:row] = args.shift.to_i
+    when '-c'
+      o[:column] = args.shift.to_i
+    when '-v'
+      o[:value] = args.shift.to_i
+    when '-md'
+      o[:md] = true
+    else
+      f << x
+    end
+  end
+
+  ## Ruby indexes from 0 not 1
+  o[:row]    -= 1 if o[:row]
+  o[:column] -= 1 if o[:column]
+  o[:value]  -= 1 if o[:value]
+
+  [o, f]
+end
+
+o, f = options
+
+if f.empty?
+  puts 'triple FILE'
+  puts ''
+  puts 'Read a file of triplets and outputs as a table'
+  puts 'With this as input:'
+  puts '  r1,c1,1'
+  puts '  r1,c2,2'
+  puts '  r1,c3,3'
+  puts '  r2,c1,4'
+  puts '  r2,c2,5'
+  puts '  r2,c3,6'
+  puts '  r3,c1,7'
+  puts '  r3,c2,8'
+  puts '  r3,c3,9'
+  puts ''
+  puts 'Will output:'
+  puts '  ,c1,c2,c3'
+  puts '  r1,1,2,3'
+  puts '  r2,4,5,6'
+  puts '  r3,7,8,9'
+  puts ''
+  puts 'Note that it assumes only one value per row / column. By'
+  puts 'default the row is the first column in the input data, the'
+  puts 'column the second and the value the third. The comma is the'
+  puts 'delimiter. The can be changed by passing the -r -c -v flags'
+  puts 'to override the columns used for the row, column and value'
+  puts 'columns.'
+  puts ''
+  puts 'By default output is suitable for a csv file, add -md to'
+  puts 'output in markdown format'
+
+  exit 1
+end
+
+t = Triplets.new
+
+f.each do |filename|
+  File.open(filename, 'r').each do |line|
+    parts = line.chomp.split(',')
+    t.add(parts[o[:row]], parts[o[:column]], parts[o[:value]])
+  end
+end
+
+if o[:md]
+  puts "|#{['', *t.columns].join('|')}|"
+  puts "|#{'---|' * (t.columns.size + 1)}"
+  t.rows.each do |row|
+    x = [row]
+    t.columns.each do |column|
+      x << t[row, column]
+    end
+    puts "|#{x.join('|')}|"
+  end
+else
+  puts ['', *t.columns].join(',')
+  t.rows.each do |row|
+    x = [row]
+    t.columns.each do |column|
+      x << t[row, column]
+    end
+    puts x.join(',')
+  end
+end
