@@ -31,5 +31,5 @@ delimiter. The can be changed by passing the `-r`, `-c`, `-v` flags
 to override the columns used for the row, column and value
 columns.
 
-By default output is suitable for a csv file, add -md to
+By default output is suitable for a csv file, add `-md` to
 output in markdown format
